@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Population Analytics Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.25rem);
+      color: #2d3748;
+    }
+
+    .header {
+      max-width: 1400px;
+      margin: 0 auto clamp(2rem, 5vw, 3.75rem);
+      text-align: center;
+    }
+
+    .header h1 {
+      color: #ffffff;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1rem, 2vw, 1.125rem);
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: #667eea;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+      gap: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .city-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .city-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: clamp(1.5rem, 4vw, 1.75rem) clamp(1.5rem, 4vw, 2rem);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+      opacity: 0.3;
+    }
+
+    .city-card h2 {
+      color: #ffffff;
+      font-size: clamp(1.5rem, 3vw, 1.75rem);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .region-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      padding: 0.375rem 0.875rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(10px);
+    }
+
+    .card-body {
+      padding: clamp(1.5rem, 4vw, 2rem);
+    }
+
+    .prediction-box {
+      background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+      border-radius: 12px;
+      padding: clamp(1.25rem, 3vw, 1.5rem);
+      margin-bottom: clamp(1.5rem, 3vw, 1.75rem);
+      border-left: 4px solid #667eea;
+    }
+
+    .prediction-label {
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.625rem;
+    }
+
+    .prediction-value {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .prediction-year {
+      color: #1e293b;
+      font-size: clamp(1.125rem, 2vw, 1.25rem);
+      font-weight: 600;
+    }
+
+    .prediction-population {
+      color: #667eea;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+    }
+
+    .chart-container {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8fafc;
+      padding: 1rem;
+      border: 1px solid #e2e8f0;
+      margin-bottom: clamp(1.25rem, 3vw, 1.5rem);
+      display: none;
+    }
+
+    .chart-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .chart-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: clamp(1.25rem, 3vw, 1.5rem);
+    }
+
+    .btn-card {
+      padding: 0.625rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .btn-card:hover {
+      border-color: #667eea;
+      color: #667eea;
+      background: #f8fafc;
+      transform: translateY(-2px);
+    }
+
+    .btn-card.active {
+      border-color: #667eea;
+      background: #667eea;
+      color: #ffffff;
+    }
+
+    .btn-card svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .history-section {
+      display: none;
+    }
+
+    .history-section.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .history-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .history-table-wrapper {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      min-width: 500px;
+    }
+
+    .history-table thead {
+      background: #f8fafc;
+    }
+
+    .history-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #64748b;
+      border-bottom: 2px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
+    .history-table td {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #475569;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .history-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .growth-badge {
+      display: inline-block;
+      padding: 0.25rem 0.625rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .growth-positive {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .growth-negative {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .stats-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: clamp(1rem, 3vw, 1.25rem) clamp(1.5rem, 4vw, 2rem);
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.875rem;
+      color: #64748b;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-icon {
+      width: 18px;
+      height: 18px;
+      color: #667eea;
+      flex-shrink: 0;
+    }
+
+    .decorative-circle {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      top: -50px;
+      right: -30px;
+    }
+
+    @media (max-width: 768px) {
+      .stats-footer {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-footer {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Population Analytics Dashboard</h1>
+    <p>Comprehensive population growth trends and predictions</p>
+    <div class="header-actions">
+
+    </div>
+  </div>
+
+  <div class="container">
+    {% for city in cities %}
+      <div class="city-card">
+        <div class="card-header">
+          <div class="decorative-circle"></div>
+          <h2>{{ city.name }}</h2>
+          <span class="region-tag">{{ city.region }}</span>
+        </div>
+
+        <div class="card-body">
+          <div class="prediction-box">
+            <div class="prediction-label">Population Forecast</div>
+            <div class="prediction-value">
+              <span class="prediction-year">{{ city.predicted_year }}:</span>
+              <span class="prediction-population">{{ city.predicted_population }}</span>
+            </div>
+          </div>
+
+          <div class="chart-container" id="chart-{{ city.name|slugify }}">
+            <img src="data:image/png;base64,{{ city.chart }}" alt="{{ city.name }} population growth chart">
+          </div>
+
+          <div class="card-actions">
+            <button class="btn-card show-chart-btn" data-city="{{ city.name }}">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              Chart View
+            </button>
+            <button class="btn-card show-history-btn" data-city="{{ city.name }}">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              History
+            </button>
+            <button class="btn-card" onclick="window.location.href='{% url 'export_city_csv' city.id %}'">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Export
+            </button>
+          </div>
+
+          <div class="history-section" id="history-{{ city.name|slugify }}">
+            <div class="history-header">
+              <h3 class="history-title">Historical Population Data</h3>
+            </div>
+            <div class="history-table-wrapper">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Year</th>
+                    <th>Population</th>
+                    <th>Growth</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for record in city.history %}
+                  <tr>
+                    <td><strong>{{ record.year }}</strong></td>
+                    <td>{{ record.population }}</td>
+                    <td>
+                      {% if record.growth %}
+                        <span class="growth-badge {% if record.growth > 0 %}growth-positive{% else %}growth-negative{% endif %}">
+                          {% if record.growth > 0 %}+{% endif %}{{ record.growth }}%
+                        </span>
+                      {% else %}
+                        <span style="color: #94a3b8;">—</span>
+                      {% endif %}
+                    </td>
+                    <td style="color: #94a3b8;">{{ record.source }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-footer">
+          <div class="stat-item">
+            <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <span>{{ city.history|length }} Records</span>
+          </div>
+          <div class="stat-item">
+            <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            <span>Trend Analysis</span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    // Toggle between chart and history views
+    document.querySelectorAll('.show-history-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const cityName = this.dataset.city;
+        const card = this.closest('.city-card');
+        const chartContainer = card.querySelector('.chart-container');
+        const historySection = card.querySelector('.history-section');
+        const chartBtn = card.querySelector('.show-chart-btn');
+
+        // Hide chart and show history
+        chartContainer.classList.remove('active');
+        historySection.classList.add('active');
+
+        // Update button states
+        this.classList.add('active');
+        chartBtn.classList.remove('active');
+      });
+    });
+
+    document.querySelectorAll('.show-chart-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const card = this.closest('.city-card');
+        const chartContainer = card.querySelector('.chart-container');
+        const historySection = card.querySelector('.history-section');
+        const historyBtn = card.querySelector('.show-history-btn');
+
+        // Show chart and hide history
+        chartContainer.classList.add('active');
+        historySection.classList.remove('active');
+
+        // Update button states
+        this.classList.add('active');
+        historyBtn.classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>
