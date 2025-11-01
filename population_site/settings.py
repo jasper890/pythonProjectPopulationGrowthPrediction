@@ -15,7 +15,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-placeholder")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 # In production, set this properly:
-ALLOWED_HOSTS = ["*", "your-app-name.onrender.com"]
+ALLOWED_HOSTS = ["*", "frontendpython-djangobackend.onrender.com"]
 
 # Custom user model
 AUTH_USER_MODEL = 'analytics.User'
@@ -45,7 +45,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
-    "https://your-app-name.onrender.com",
+    "https://frontendpython-djangobackend.onrender.com",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -87,7 +87,14 @@ WSGI_APPLICATION = 'population_site.wsgi.application'
 
 # Database (Supabase PostgreSQL)
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get("DATABASE_URL"))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('SUPABASE_DB_NAME'),
+        'USER': os.environ.get('SUPABASE_DB_USER'),
+        'PASSWORD': os.environ.get('SUPABASE_DB_PASSWORD'),
+        'HOST': os.environ.get('SUPABASE_DB_HOST'),
+        'PORT': os.environ.get('SUPABASE_DB_PORT', 5432),
+    }
 }
 
 # Password validation
