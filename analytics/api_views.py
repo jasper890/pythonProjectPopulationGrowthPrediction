@@ -12,10 +12,10 @@ from django.shortcuts import get_object_or_404
 from io import BytesIO
 import base64
 import numpy as np
-import matplotlib
 
-matplotlib.use('Agg')  # Use non-interactive backend BEFORE importing pyplot
-import matplotlib.pyplot as plt
+
+ # Use non-interactive backend BEFORE importing pyplot
+
 from sklearn.linear_model import LinearRegression
 import csv
 import json
@@ -111,43 +111,6 @@ class BasePopulationView:
         predicted_population = model.predict([[next_year]])[0]
 
         return int(next_year), int(predicted_population)
-
-    def generate_chart_base64(self, city_name, population_history):
-        """
-        Generate a line chart of population data with a simple linear prediction
-        """
-        if not population_history.exists():
-            return None
-
-        years = np.array([d.year for d in population_history]).reshape(-1, 1)
-        population = np.array([d.population_count for d in population_history])
-
-        model = LinearRegression()
-        model.fit(years, population)
-        next_year = years[-1][0] + 1
-        predicted = model.predict([[next_year]])[0]
-
-        # Create figure with explicit backend
-        fig, ax = plt.subplots(figsize=(4, 3))
-        ax.plot(years, population, 'bo-', label='Actual')
-        ax.plot(next_year, predicted, 'ro', label='Predicted')
-        ax.set_title(f"{city_name} Population Growth")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Population")
-        ax.legend()
-        fig.tight_layout()
-
-        buffer = BytesIO()
-        fig.savefig(buffer, format='png')
-        buffer.seek(0)
-        image_png = buffer.getvalue()
-        buffer.close()
-
-        # Close figure to free memory
-        plt.close(fig)
-
-        chart = base64.b64encode(image_png).decode('utf-8')
-        return chart
 
 
 # ------------------ API Views ------------------

@@ -5,9 +5,6 @@ from django.contrib import messages
 from django.http import HttpResponse
 from io import BytesIO
 import base64
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 import csv
 
 from .models import City, PopulationData, User
@@ -15,6 +12,11 @@ from .forms import LoginForm, AdminUserForm, CityForm, PopulationDataForm
 
 
 def home(request):
+    # Lazy imports to avoid Render memory crash
+    from sklearn.linear_model import LinearRegression
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     cities = City.objects.all()
     context = {'cities': []}
 
@@ -74,6 +76,7 @@ def home(request):
 
     return render(request, 'analytics/home.html', context)
 
+
 # Superadmin check decorator
 def superadmin_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'superadmin')(view_func)
@@ -107,6 +110,11 @@ def logout_view(request):
 # Dashboard view
 @login_required
 def dashboard(request):
+    # Lazy imports to save memory
+    from sklearn.linear_model import LinearRegression
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     cities = City.objects.all()
     context = {'cities': [], 'total_population': 0, 'total_cities': cities.count()}
 
@@ -126,7 +134,7 @@ def dashboard(request):
             context['total_population'] += int(predicted)
 
             # Generate plot
-            plt.figure(figsize=(4,3))
+            plt.figure(figsize=(4, 3))
             plt.plot(years, population, 'bo-', label='Actual')
             plt.plot(next_year, predicted, 'ro', label='Predicted')
             plt.title(city.city_name)
@@ -192,13 +200,14 @@ def add_population(request):
     if request.method == "POST":
         form = PopulationDataForm(request.POST)
         if form.is_valid():
-            population = form.save(commit=False)  # don't save yet
-            population.created_by = request.user  # assign current logged-in user
-            population.save()  # now save
+            population = form.save(commit=False)
+            population.created_by = request.user
+            population.save()
             messages.success(request, "Population data added successfully!")
         else:
             messages.error(request, "Failed to add population data. Please check the form.")
     return redirect('dashboard')
+
 
 # Export city population CSV
 @login_required
