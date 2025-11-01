@@ -6,7 +6,11 @@ class User(AbstractUser):
         ('superadmin', 'Super Admin'),
         ('admin', 'Admin'),
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='superadmin',  # default role if none provided
+    )
 
     # Fix reverse accessor clash
     groups = models.ManyToManyField(
