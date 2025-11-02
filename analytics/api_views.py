@@ -9,6 +9,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.shortcuts import get_object_or_404
+from datetime import datetime
 from io import BytesIO
 import base64
 import numpy as np
@@ -88,14 +89,16 @@ class BasePopulationView:
 
     def predict_next_year_population(self, population_history):
         """
-        Predict next year's population using Linear Regression (scikit-learn).
-        Much faster and still accurate for population trends.
+        Predict next year's population using Linear Regression (scikit-learn),
+        starting from the current year, not the last year in the data.
         """
         data = list(population_history.order_by('year'))
 
         if len(data) < 2:
             if data:
-                return data[-1].year + 1, int(data[-1].population_count)
+                # If less than 2 data points, return current year + 1 with last known population
+                current_year = datetime.now().year
+                return current_year + 1, int(data[-1].population_count)
             return None, 0
 
         # Prepare training data
@@ -106,8 +109,9 @@ class BasePopulationView:
         model = LinearRegression()
         model.fit(years, populations)
 
-        # Predict for next year
-        next_year = years[-1][0] + 1
+        # Predict for next year starting from current year
+        current_year = datetime.now().year
+        next_year = current_year + 1
         predicted_population = model.predict([[next_year]])[0]
 
         return int(next_year), int(predicted_population)
