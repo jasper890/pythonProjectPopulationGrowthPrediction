@@ -70,7 +70,8 @@ ROOT_URLCONF = 'population_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 👇 ADD THIS so Django can find your Vite index.html
+         'DIRS': [os.path.join(BASE_DIR, 'population_site/static/frontend/dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -87,13 +88,17 @@ WSGI_APPLICATION = 'population_site.wsgi.application'
 
 # Database (Supabase PostgreSQL)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('SUPABASE_DB_NAME'),
-        'USER': os.environ.get('SUPABASE_DB_USER'),
-        'PASSWORD': os.environ.get('SUPABASE_DB_PASSWORD'),
-        'HOST': os.environ.get('SUPABASE_DB_HOST'),
-        'PORT': os.environ.get('SUPABASE_DB_PORT', 5432),
+     'default': {
+        'ENGINE': 'mssql',
+        'NAME': 'EventDrivenPopulationsDb',
+        'USER': '',  # leave empty for trusted connection
+        'PASSWORD': '',  # leave empty
+        'HOST': 'localhost',
+        'PORT': '',  # default port 1433 if empty
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'trusted_connection': 'yes',  # enables Windows Authentication
+        },
     }
 }
 
@@ -114,6 +119,12 @@ USE_TZ = True
 # Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# 👇 ADD THESE — tells Django where to find Vite static files
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'population_site/static/frontend/dist'),
+]
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field

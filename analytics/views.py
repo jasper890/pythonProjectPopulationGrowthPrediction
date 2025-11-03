@@ -6,7 +6,7 @@
 # from io import BytesIO
 # import base64
 # import csv
-#
+from django.shortcuts import render
 # from .models import City, PopulationData, User
 # from .forms import LoginForm, AdminUserForm, CityForm, PopulationDataForm
 #
@@ -224,3 +224,6 @@
 #         writer.writerow([record.year, record.population_count, record.source])
 #
 #     return response
+def frontend(request):
+    # Serve the React index.html
+    return render(request, 'index.html')
