@@ -423,3 +423,126 @@ def update_city(request, city_id):
             'region': city.region
         }
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def generate_ml_summary_report(request):
+    """
+    Generate a comprehensive paragraph summary of population predictions
+    for the next year using machine learning analysis.
+    """
+    base = BasePopulationView()
+    cities = City.objects.all()
+
+    if not cities.exists():
+        return Response({
+            'summary': 'No city data available for analysis.',
+            'year': datetime.now().year + 1
+        }, status=status.HTTP_200_OK)
+
+    # Collect predictions and analysis data
+    total_predicted_population = 0
+    city_predictions = []
+    growth_rates = []
+    current_year = datetime.now().year
+    next_year = current_year + 1
+
+    for city in cities:
+        population_data = PopulationData.objects.filter(city=city).order_by('year')
+
+        if population_data.exists():
+            predicted_year, predicted_population = base.predict_next_year_population(population_data)
+
+            # Calculate average historical growth rate
+            history = base.calculate_growth(population_data)
+            valid_growth = [h['growth'] for h in history if h['growth'] is not None]
+            avg_growth = np.mean(valid_growth) if valid_growth else 0
+
+            # Get latest actual population
+            latest_data = population_data.last()
+            latest_population = latest_data.population_count
+
+            # Calculate predicted change
+            predicted_change = predicted_population - latest_population
+            predicted_growth_rate = (predicted_change / latest_population * 100) if latest_population > 0 else 0
+
+            city_predictions.append({
+                'name': city.city_name,
+                'region': city.region,
+                'current_population': latest_population,
+                'predicted_population': predicted_population,
+                'predicted_change': predicted_change,
+                'predicted_growth_rate': predicted_growth_rate,
+                'avg_historical_growth': avg_growth
+            })
+
+            total_predicted_population += predicted_population
+            growth_rates.append(predicted_growth_rate)
+
+    # Sort cities by predicted population
+    city_predictions.sort(key=lambda x: x['predicted_population'], reverse=True)
+
+    # Identify key insights
+    fastest_growing = max(city_predictions, key=lambda x: x['predicted_growth_rate']) if city_predictions else None
+    slowest_growing = min(city_predictions, key=lambda x: x['predicted_growth_rate']) if city_predictions else None
+    largest_city = city_predictions[0] if city_predictions else None
+    avg_growth_rate = np.mean(growth_rates) if growth_rates else 0
+
+    # Generate comprehensive paragraph summary
+    summary_parts = []
+
+    # Opening statement
+    summary_parts.append(
+        f"Based on machine learning analysis using Linear Regression models trained on historical population data, "
+        f"the total projected population across all {len(city_predictions)} cities for {next_year} is estimated at "
+        f"{total_predicted_population:,} people, representing an overall average growth rate of {avg_growth_rate:.2f}%."
+    )
+
+    # Largest city insight
+    if largest_city:
+        summary_parts.append(
+            f"{largest_city['name']} in {largest_city['region']} is predicted to remain the most populous city "
+            f"with {largest_city['predicted_population']:,} residents, growing by {largest_city['predicted_change']:,} "
+            f"people ({largest_city['predicted_growth_rate']:.2f}%) from its current population of {largest_city['current_population']:,}."
+        )
+
+    # Growth dynamics
+    if fastest_growing and slowest_growing:
+        summary_parts.append(
+            f"Population dynamics vary significantly across regions, with {fastest_growing['name']} "
+            f"experiencing the most rapid growth at {fastest_growing['predicted_growth_rate']:.2f}%, "
+            f"while {slowest_growing['name']} shows the slowest expansion at {slowest_growing['predicted_growth_rate']:.2f}%."
+        )
+
+    # Top 3 cities breakdown
+    if len(city_predictions) >= 3:
+        top_three = city_predictions[:3]
+        top_three_text = ", ".join([
+            f"{c['name']} ({c['predicted_population']:,})" for c in top_three[:2]
+        ]) + f", and {top_three[2]['name']} ({top_three[2]['predicted_population']:,})"
+
+        summary_parts.append(
+            f"The three most populous cities projected for {next_year} are {top_three_text}, "
+            f"collectively accounting for a substantial portion of the total urban population."
+        )
+
+    # Methodology note
+    summary_parts.append(
+        f"These predictions are generated through supervised machine learning algorithms that analyze "
+        f"year-over-year population trends, historical growth patterns, and demographic trajectories, "
+        f"providing data-driven forecasts to support urban planning and policy decisions for the upcoming year."
+    )
+
+    # Combine all parts into one paragraph
+    full_summary = " ".join(summary_parts)
+
+    return Response({
+        'summary': full_summary,
+        'year': next_year,
+        'total_cities': len(city_predictions),
+        'total_predicted_population': total_predicted_population,
+        'average_growth_rate': round(avg_growth_rate, 2),
+        'methodology': 'Linear Regression Machine Learning Model',
+        'generated_at': datetime.now().isoformat()
+    }, status=status.HTTP_200_OK)
